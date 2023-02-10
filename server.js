@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const passport = require('passport');
 const bodyParser = require("body-parser");
-const cookieSession = require("cookie-session");
+// const cookieSession = require("cookie-session");
 
 // Require the 'strategy' to authenticate requests 
 const LocalStrategy = require('passport-local').Strategy;
@@ -11,15 +11,15 @@ const LocalStrategy = require('passport-local').Strategy;
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-app.use(
-  cookieSession({
-    name: "session",
-    keys: ["helloworld"],
+// app.use(
+//   cookieSession({
+//     name: "session",
+//     keys: ["helloworld"],
 
-    // Cookie Options
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-  })
-);
+//     // Cookie Options
+//     maxAge: 24 * 60 * 60 * 1000, // 24 hours
+//   })
+// );
 
 // Initialize passport and sessions and tell app to use it as middleware
 app.use(passport.initialize());
@@ -32,9 +32,9 @@ passport.serializeUser((user, done) => {
 });
 
 // Deserialize data so we can use it
-passport.deserializeUser((user, done) => {
-  done(null, user);
-});
+// passport.deserializeUser((user, done) => {
+//   done(null, user);
+// });
 
 
 // Configure a local strategy named 'login' using the passport.use command. This tells Passport what middleware to use: 
@@ -53,10 +53,11 @@ passport.use(
   })
 );
 
+// Custom route-level middleware function which uses PP's helper function, isAuthenticated
 const authenticateRequest = function (req, res, next) {
   if (!req.isAuthenticated()) {
     // Denied. Redirect to login
-    console.log("DEEEnied");
+    console.log("Denied");
     res.redirect("/login");
   } else {
     next();
@@ -79,11 +80,22 @@ app.post(
 app.get("/success", (req, res) => {
   console.log(req.user); // see { myUser: 'user', myID: 1234 }
   res.send("Hey, hello from the server!");
+});
 
+// Setup protected route
+app.get("/protected", authenticateRequest, (req, res) => {
+  res.send("Secret stuff!");
 });
 
 app.get("/login", (req, res) => {
   res.sendFile(__dirname + "/login.html");
+});
+
+// 'Logout' route to call logout function on the req.object
+// Passport's logout method removes the req.user property and makes null the token stored in our cookie.
+app.get("/logout", (req, res) => {
+  req.logout();
+  res.send("Logged out!");
 });
 
 app.listen(8000);
